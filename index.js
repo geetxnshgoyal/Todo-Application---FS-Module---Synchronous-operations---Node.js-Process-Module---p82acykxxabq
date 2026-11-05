@@ -10,7 +10,42 @@ const readTodos = () => {
     return [];
   }
 
-  return data.trim().split(/\n(?=\{)/).map((item) => JSON.parse(item));
+  const todos = [];
+  let objectStart = -1;
+  let objectDepth = 0;
+  let insideString = false;
+  let escaped = false;
+
+  for (let index = 0; index < data.length; index += 1) {
+    const character = data[index];
+
+    if (insideString) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === '"') {
+        insideString = false;
+      }
+      continue;
+    }
+
+    if (character === '"') {
+      insideString = true;
+    } else if (character === "{") {
+      if (objectDepth === 0) {
+        objectStart = index;
+      }
+      objectDepth += 1;
+    } else if (character === "}") {
+      objectDepth -= 1;
+      if (objectDepth === 0) {
+        todos.push(JSON.parse(data.slice(objectStart, index + 1)));
+      }
+    }
+  }
+
+  return todos;
 };
 
 const writeTodos = (todos) => {
